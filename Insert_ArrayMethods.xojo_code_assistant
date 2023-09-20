@@ -1,0 +1,20 @@
+// Inserts macOS declares for getting values out of an NSArray
+
+function name() as String
+Return "Code Snippets/Array Declares"
+end function
+
+Function canedit(selection As String) As Boolean
+Return True
+End Function
+
+Function edit(selection As String) As String
+Dim sa() As String
+sa.append "Declare Function count Lib ""Foundation"" selector ""count"" (obj as ptr) as Integer"
+sa.append "Declare Function objectAtIndex Lib ""Foundation"" selector ""objectAtIndex:"" (obj as ptr, index as integer) as ptr"
+sa.append ""
+sa.append selection
+
+Return Join(sa, EndOfLine)
+End Function
+

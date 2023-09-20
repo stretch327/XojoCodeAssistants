@@ -1,0 +1,19 @@
+// Inserts a macOS declare for the retain method.
+
+function name() as String
+Return "Code Snippets/Retain"
+End Function
+
+Function canedit(selection As String) As Boolean
+Return True
+End Function
+
+Function edit(selection As String) As String
+Dim sa() As String
+sa.append "Declare Function Retain Lib ""Foundation"" Selector ""retain"" (obj as Ptr) as Ptr"
+sa.append ""
+sa.append selection
+	
+Return join(sa, endofline)
+End Function
+

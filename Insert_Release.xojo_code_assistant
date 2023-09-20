@@ -1,0 +1,18 @@
+// Inserts a macOS declare for the release method
+function name() as String
+Return "Code Snippets/Release"
+End Function
+
+Function canedit(selection As String) As Boolean
+Return True
+End Function
+
+Function edit(selection As String) As String
+Dim sa() As String
+sa.append "Declare Sub Release Lib ""Foundation"" Selector ""release"" (obj as Ptr)"
+sa.append ""
+sa.append selection
+	
+Return join(sa, endofline)
+End Function
+

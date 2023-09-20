@@ -1,0 +1,42 @@
+// Expands comments to be 80 characters wide using # marks
+// Usage: Select an existing comment, right-click and select 
+// User Code Assistants > Examples > Comment Expander
+
+function name() as string
+return "Comments/Comment Expander"
+End Function
+
+Function canedit(selection As String) As Boolean
+	selection = trim(selection)
+	if left(selection,2) = "//" or left(selection,1) = "'" or left(selection,4) = "REM " then
+		return true
+	end if
+	
+	return false
+end function 
+
+Function edit(selection As String) As String
+  selection = trim(selection)
+  Var rx as new regex
+  rx.SearchPattern = "(?mi-Us)^((?://|'|REM )\s?)(.*)$"
+  Var rm as RegexMatch = rx.Search(selection)
+  if rm = Nil then
+  	Return selection
+  end if
+  
+  dim commentGlyph as string = rm.SubExpressionString(1)
+  dim comment as string = " " + rm.SubExpressionString(2) + " "
+  	
+  const commentLength = 80
+  var allHashes as integer = commentLength - len(comment)
+  var prehashes as integer = Floor(allhashes/2)
+  var posthashes as integer = Ceil(allhashes/2)
+  
+  var hashstr as string
+  for i as integer = 1 to posthashes
+    hashstr = hashstr + "#"
+  Next i
+
+  return commentGlyph + left(hashstr,prehashes) + comment + left(hashstr,posthashes)
+  
+End Function

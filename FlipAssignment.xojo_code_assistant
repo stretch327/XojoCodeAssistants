@@ -1,0 +1,26 @@
+// Flip Assignment
+// Flips an assignment line left to right
+// x = textfield1.text becomes textfield1.text = x
+
+function name() as string
+	return "Selection/Flip Assignment"
+end function
+
+function canedit(selection as string) as Boolean
+	return selection.IndexOf("=")>-1
+end function 
+
+function edit(selection as string) as string
+	selection = trim(selection)
+	Dim rx as new regex
+	rx.searchpattern = "(?mi-Us)^([^=]+)=(.*)$"
+	dim rm as regexmatch = rx.search(selection)
+	if rm = nil then
+		return selection
+	end if
+
+	dim leftpart as string = Trim(rm.subexpressionstring(1))
+	dim rightPart as string = Trim(rm.subexpressionstring(2))
+
+	return rightpart + " = " + leftpart
+End Function

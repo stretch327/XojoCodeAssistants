@@ -1,0 +1,18 @@
+// Inserts a macOS declare for the NSSelectorFromString method
+function name() as String
+  Return "Code Snippets/NSSelectorFromString"
+end function
+
+function canedit(selection as string) as Boolean
+  Return true
+end function
+
+function edit(selection as string) as string
+	dim sa() as string
+	sa.append "Declare Function NSSelectorFromString Lib ""Foundation"" (name as cfstringref) as ptr"
+	sa.append ""
+	sa.append selection
+	
+	return join(sa, endofline)
+end function
+

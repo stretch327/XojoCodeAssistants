@@ -1,0 +1,21 @@
+// Wraps the current selection in:
+// if System.Version >= "11" then
+//    ...selection...
+// End If
+
+function name() as String
+Return "Wrap In/System.Version"
+end function
+
+function canedit(selection as string) as Boolean
+Return trim(selection)<>""
+end function
+
+function edit(selection as string) as string
+Dim lines() As String
+lines.add "If System.Version >= ""11"" Then"
+lines.add trim(selection)
+lines.add "End If"
+return join(lines, endofline)
+end function
+

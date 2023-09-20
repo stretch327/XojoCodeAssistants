@@ -1,0 +1,24 @@
+// Converts an NS prefixed selection to code to create the class
+//
+// NSMutableArray is converted do:
+// Dim NSMutableArray as Ptr = NSClassFromString("NSMutableArray")
+
+function name() as String
+Return "Selection/NS Class to Variable"
+end function
+
+function canedit(selection as string) as Boolean
+Return leftb(selection, 2) = "NS" and instr(selection," ") = 0
+End Function
+
+function edit(selection as string) as string
+Return param("Dim %1 As Ptr = NSClassFromString(""%1"")", selection)
+End Function
+
+
+Function param(aString as String, paramArray rep As String) As String
+For i As Integer = UBound(rep)DownTo 0
+aString = ReplaceAll(aString, "%" + str(i + 1), rep(i))
+Next i
+Return aString
+End Function

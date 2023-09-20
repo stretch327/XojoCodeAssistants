@@ -1,0 +1,21 @@
+// Inserts starter declares for initializing an objective C class
+
+function name() as String
+  Return "Code Snippets/InitClass"
+end function
+
+function canedit(selection as string) as Boolean
+return selection = ""
+end function
+
+function edit(selection as string) as string
+dim sa() as string
+sa.append "Declare Function NSClassFromString Lib ""Foundation"" (name as cfstringref) as ptr"
+sa.append "Declare Function alloc Lib ""Foundation"" selector ""alloc"" (cls as ptr) as ptr"
+sa.append "Declare Function init Lib ""Foundation"" selector ""init"" (cls as ptr) as ptr"
+sa.append ""
+sa.append "dim obj as ptr = Init(alloc(NSClassFromString(""classname"")))"
+sa.append ""
+
+	return join(sa, endofline)
+end function

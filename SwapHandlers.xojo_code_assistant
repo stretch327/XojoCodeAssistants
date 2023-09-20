@@ -1,0 +1,29 @@
+// Swaps AddHandler/RemoveHandler calls
+
+function name() as String
+  Return "Selection/Swap Add\RemoveHandler"
+end function
+
+function canedit(selection as string) as Boolean
+	dim rx as new Regex
+	rx.searchpattern = "^(Add|Remove)Handler.*"
+	dim rm as regexmatch = rx.search(selection)
+	return rm<>nil
+end function
+
+function edit(selection as string) as string
+	dim lines() as string = split(selection, endofline)
+	for i as integer = 0 to ubound(lines)
+		if leftmatch(lines(i), "AddHandler") then
+			lines(i) = replace(lines(i),"AddHandler","RemoveHandler")
+		elseif leftmatch(lines(i), "RemoveHandler") Then
+			lines(i) = replace(lines(i), "RemoveHandler", "AddHandler")
+		end if
+	next i
+	return join(lines, endofline)
+end function
+
+
+function leftmatch(astring as string, match as string) as boolean
+	return left(astring, len(match)) = match 
+end function

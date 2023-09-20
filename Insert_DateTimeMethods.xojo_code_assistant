@@ -1,0 +1,22 @@
+// Inserts a declare and code for converting an NSDate to a DateTime
+
+function name() as String
+Return "Code Snippets/NSDate > DateTime Declares"
+end function
+
+Function canedit(selection As String) As Boolean
+Return True
+End Function
+
+Function edit(selection As String) As String
+Dim sa() As String
+sa.append selection
+sa.append "Declare Function getTimeIntervalSince1970 Lib ""Foundation"" Selector ""timeIntervalSince1970"" (obj As ptr) As Double"
+sa.append ""
+sa.append "Dim n As Double = getTimeIntervalSince1970(p)"
+sa.append ""
+sa.append "Return New DateTime(n)"
+
+
+Return Join(sa, EndOfLine)
+End Function

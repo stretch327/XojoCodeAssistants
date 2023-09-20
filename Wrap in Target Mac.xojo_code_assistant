@@ -1,0 +1,17 @@
+// Wraps the current selection in #if TargetMacOS
+function name() as String
+Return "Wrap In/#TargetMacOS"
+end function
+
+function canedit(selection as string) as Boolean
+Return trim(selection)<>""
+end function
+
+function edit(selection as string) as string
+Dim lines() As String
+lines.add "#if TargetMacOS"
+lines.add trim(selection)
+lines.add "#EndIf"
+return join(lines, endofline)
+end function
+

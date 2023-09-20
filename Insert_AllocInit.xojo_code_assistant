@@ -1,0 +1,20 @@
+// Inserts Alloc and Init declares at the cursor location
+
+function name() as String
+Return "Code Snippets/AllocInit"
+End Function
+
+Function canedit(selection As String) As Boolean
+Return True
+End Function
+
+Function edit(selection As String) As String
+Dim sa() As String
+sa.append "Declare Function alloc Lib ""Foundation"" selector ""alloc"" (cls as ptr) as ptr"
+sa.append "Declare Function init Lib ""Foundation"" selector ""init"" (cls as ptr) as ptr"
+sa.append ""
+sa.append selection
+	
+Return join(sa, endofline)
+End Function
+

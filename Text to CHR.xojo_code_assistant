@@ -1,0 +1,22 @@
+// Converts the currently selected string into a series of chrb() calls.
+
+function name() as String
+  Return "Selection/Text to Chr"
+end function
+
+function canedit(selection as string) as Boolean
+  return (left(selection,1) = chr(34) and right(selection,1) = chr(34))
+end function
+
+function edit(selection as string) as string
+	
+	dim txt as string = mid(selection,2,len(selection)-2)
+	
+	dim sa() as string
+	for i as integer = 1 to len(txt)
+		sa.add "chrb(" + str(asc(mid(txt,i,1))) + ")"
+	next i
+	
+	return join(sa," + ") + " // " + txt
+end function
+

@@ -1,0 +1,36 @@
+// Splits a variable declaration into two lines:
+// Dim x as integer = 10
+//
+// is converted to:
+// x = 10
+//
+// with "Dim x as integer" placed on the clipboard
+
+function name() as String
+  Return "Selection/Split Declaration"
+end function
+
+function canedit(selection as string) as Boolean
+  dim rx as new regex
+  rx.searchpattern = "(?mi-Us)(dim|var)\s+([^\s]+)\s+as\s+((?:New\s+)?[^\s]+)\s+=\s+(.+)"
+  return rx.search(selection)<>nil
+end function
+
+function edit(selection as string) as string
+	dim rx as new regex
+	rx.searchpattern = "(?mi-Us)(dim|var)\s+([^\s]+)\s+as\s+((?:New\s+)?[^\s]+)\s+=\s+(.+)"
+	dim rm as regexmatch = rx.search(selection)
+	if rm = nil then
+		return selection
+	end if
+		
+	dim decl as string = rm.subexpressionstring(1) + " " + rm.subexpressionstring(2) + " As " + rm.subexpressionstring(3)
+	dim newlines() as string
+	newlines.add rm.subexpressionstring(2) + " = " + rm.subexpressionstring(4)
+	
+	dim cb as new clipboard
+	cb.text = decl
+	
+	Return join(newlines, chr(13))
+end function
+

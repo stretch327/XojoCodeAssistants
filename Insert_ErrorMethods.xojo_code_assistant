@@ -1,0 +1,23 @@
+// Inserts macOS declares for getting info out of an NSError
+
+function name() as String
+Return "Code Snippets/NSError Declares"
+end function
+
+Function canedit(selection As String) As Boolean
+Return True
+End Function
+
+Function edit(selection As String) As String
+Dim sa() As String
+sa.append "// NSError Methods"
+sa.append "Declare Function getCode Lib ""Foundation"" selector ""code"" (obj as ptr) as Integer"
+sa.append "Declare Function getLocalizedDescription Lib ""Foundation"" selector ""localizedDescription"" (obj as ptr) as CFStringRef"
+sa.append "Declare Function getLocalizedRecoverySuggestion Lib ""Foundation"" selector ""localizedRecoverySuggestion"" (obj as ptr) as CFStringRef"
+sa.append "Declare Function getLocalizedFailureReason Lib ""Foundation"" selector ""localizedFailureReason"" (obj as ptr) as CFStringRef"
+sa.append ""
+sa.append selection
+
+Return Join(sa, EndOfLine)
+End Function
+

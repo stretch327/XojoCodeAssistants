@@ -1,0 +1,20 @@
+// Inserts macOS declares for getting class and superclass
+
+function name() as String
+  Return "Code Snippets/class && superclass"
+end function
+
+function canedit(selection as string) as Boolean
+  Return true
+end function
+
+function edit(selection as string) as string
+Dim sa() As String
+sa.append "Declare Function getSuperclass Lib ""Foundation"" selector ""superclass"" (obj as ptr) as Ptr"
+sa.append "Declare Function getClass Lib ""Foundation"" selector ""class"" (obj as ptr) as Ptr"
+sa.append ""
+sa.append selection
+	
+Return Join(sa, EndOfLine)
+end function
+
