@@ -39,5 +39,7 @@ text = join(sa, endofline)
 
 // Fix the indent
 text = text + endofline
+
+// Undo to fix formatting issue in the IDE
 DoCommand("Undo")
 
