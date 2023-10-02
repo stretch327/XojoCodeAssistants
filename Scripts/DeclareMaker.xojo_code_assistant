@@ -1,0 +1,494 @@
+function name() as String
+Return "Convert/macOS && iOS Declare Maker"
+End Function
+
+Function canedit(selection As String) As Boolean
+selection = Trim(selection)
+If selection = "" Then
+selection = getClipboard
+End If
+
+If left(selection, 1) = "-" Or left(selection, 1) = "+" Or leftmatch(selection, "@property") Then
+Return True
+End If
+
+Dim rx As New RegEx
+rx.searchPattern = "(?msi-U)([^\s]+)\s*([^\s(]+)\(([^)]+)\)"
+Dim rm As RegexMatch = rx.search(selection)
+Return rm <> Nil
+End Function
+
+Function edit(selection As String) As String
+Dim cb As New clipboard
+Dim usingClipboard As Boolean
+
+If selection = "" Then
+selection = cb.Text
+usingClipboard = True
+End If
+
+selection = Replace_LineEndings(Trim(selection), " ")
+
+dim lines() as string = split(selection, endofline)
+for i as integer = 0 to UBound(lines)
+lines(i) = trim(lines(i))
+next i
+
+selection = join(lines," ")
+
+While InStr(selection, "  ") > 0
+selection = selection.ReplaceAll("  ", " ")
+Wend
+
+Dim newText As String = selection
+
+// These are in order of specificity to avoid errors
+If newText = selection Then
+newText = ExtractProperty(selection)
+End If
+
+If newText = selection Then
+newText = ExtractMethod2(selection)
+End If
+
+If newText = selection Then
+newText = ExtractMethod(selection)
+End If
+
+If newText = selection Then
+newText = ExtractGlobalMethod(selection)
+End If
+	
+If usingClipboard Then
+cb.Text = newText
+cb.Text = selection
+End If
+
+Return newText
+	
+End Function
+
+// ============================= Extraction methods =============================
+Function ExtractGlobalMethod(selection As String) As String
+Dim rx As New regex
+rx.searchPattern = "(?msi-U)([^\s]+)\s*([^\s(]+)\(([^)]+)\)"
+rx.options.TreatTargetAsOneLine = True
+Dim rm As regexmatch = rx.search(selection)
+If rm = Nil Then
+Return selection
+End If
+
+Dim ReturnType As String = rm.subexpressionstring(1)
+Dim methodName As String = rm.subexpressionstring(2)
+Dim params() As String = split(rm.subexpressionstring(3), ", ")
+
+rx.searchpattern = "(?msi-U)(.*)\s([^\s]+)"
+Dim ptypes() As String
+Dim pNames() As String
+For i As Integer = 0 To UBound(params)
+rm = rx.search(params(i))
+If rm <> Nil Then
+pTypes.append convertToXojoType(rm.subexpressionstring(1))
+pNames.append Replace(rm.subexpressionstring(2), "*", "")
+End If
+Next i
+
+Dim fnType As String = If (returnType <> "void", "Function", "Sub")
+Dim decl() As String
+decl.append "Declare"
+decl.append fnType
+decl.append methodName
+decl.append "Lib ""Foundation"""
+decl.append "("
+For i As Integer = 0 To UBound(pNames)
+decl.append pNames(i) + " as " + pTypes(i)
+Next i
+decl.append ")"
+
+If fnType = "Function" Then
+decl.append "As " + ConvertToXojoType(returnType)
+End If
+
+Return "// " + selection + endofline + Join(decl, " ")
+End Function
+
+Function ExtractProperty(selection As String) As String
+Dim rx As New regex
+rx.searchpattern = "(?msi-U)@property(?:\(([^)]*)\))?\s+(.*);"
+rx.options.TreatTargetAsOneLine = True
+Dim rm As regexmatch = rx.search(selection)
+If rm = Nil Then
+Return selection
+End If
+
+Dim getterName As String = ""
+Dim setterName as String = ""
+Dim readOnly As Boolean = False
+Dim Opts As String = Trim(rm.subexpressionstring(1))
+Dim classProp as Boolean = False
+If Opts <> "" Then
+Dim options() As String = split(Opts, ",")
+For i As Integer = 0 To ubound(options)
+options(i) = trim(options(i))
+If nthField(options(i), "=", 1) = "getter" Then
+getterName = nthfield(options(i), "=", 2)
+End If
+if nthField(options(i), "=", 1) = "setter" then
+setterName = nthfield(options(i), "=" , 2)
+end if
+If options(i) = "readonly" Then
+readOnly = True
+End If
+if options(i) = "class" then
+classProp = True
+end if
+Next i
+End If
+
+Dim definition As String = rm.subexpressionstring(2)
+
+// name should be the last item preceeded by a space that's not contained in parenthesis
+// because that would indicate a delegate method
+
+dim name, proptype as string
+if definition.IndexOf("(") > -1 then
+// @property(copy) void (^terminationHandler)(NSTask *);
+
+rx.SearchPattern = "(?mi-Us)([^\s]+)\s+(\(.*\))"
+rm = rx.Search(definition)
+if rm = nil then
+return selection
+end if
+
+Dim DelegateParts As String = rm.SubExpressionString(2)
+Dim DelegateReturnType As String = rm.SubExpressionString(1)
+
+// the first delegatepart is the name so in the case of the example above, it'd be terminationHanlder
+dim parts() as string
+rx.SearchPattern = "(?mi-Us)\(([^)]+)\)"
+rm = rx.search(DelegateParts)
+while rm<>nil
+parts.append rm.SubExpressionString(1)
+rm = rx.Search()
+wend
+
+if UBound(parts) = -1 then
+return selection
+end if
+
+name = parts(0).ReplaceAll("^","")
+proptype = "Ptr" // always because this should probably be a block
+
+else
+name = trim(NthField(definition, " ", CountFields(definition, " ")))
+proptype = trim(left(definition, len(definition) - len(name)))
+end if
+
+name = replaceall(name, "*", "")
+
+rx.searchpattern = "(?msi-U)([^<]+)"
+rm = rx.search(proptype)
+If rm = Nil Then
+Return Selection
+End If
+
+propType = convertToXojoType(rm.subexpressionstring(1))
+
+Dim getterSelector As String = name
+If getterName <> "" Then
+getterSelector = getterName
+End If
+If getterName = "" Then
+getterName = "get" + uppercase(left(name, 1)) + mid(name, 2)
+End If
+
+
+Dim setterTemp As String = "set" + uppercase(left(name, 1)) + mid(name, 2)
+if setterName <> "" then
+	setterTemp = setterName
+end if
+setterName = setterTemp
+
+dim objName as string = "obj"
+if classProp then
+objName = "cls"
+end if
+
+Dim lines() As String
+lines.append "// " + selection
+lines.append param("Declare Function %1 Lib ""Foundation"" selector ""%2"" (%3 as ptr) as %4", getterName, getterSelector, objName, propType)
+If Not readonly Then
+lines.append Param("Declare Sub %1 Lib ""Foundation"" Selector ""%2:"" (%3 as ptr, value as %4)", settername, setterName, objName, propType)
+End If
+
+Return join(lines, endofline)
+End Function
+
+Function extractMethod(selection As String) As String
+Dim rx As New regex
+rx.options.TreatTargetAsOneLine = True
+rx.Options.ReplaceAllMatches = true
+
+// Clean up the whitespace
+rx.searchPattern = "(?mi-Us)\s+\n*\s+"
+rx.replacementPattern = " "
+selection = rx.replace(selection)
+
+// extract the method type, return type and the selector
+rx.searchPattern = "(?msi-U)(\+|\-)\s+\(([^)]+)\)(.*)"
+Dim rm As regexmatch = rx.search(selection)
+If rm = Nil Then
+Return selection
+End If
+	
+Dim sharedMethod As Boolean = (rm.subexpressionstring(1) = "+")
+Dim returnType As String = NthField(rm.subexpressionstring(2), " ", 1)
+Dim Selector As String = rm.subexpressionstring(3)
+
+// split the selector into its component parts 
+rx.searchPattern = "(?mi-Us)([^:;]+)(?:(?:\s*:\s*)\(([^)]+)\)(\w+)\b)?"
+rm = rx.search(Selector)
+	
+If rm = Nil Then
+Return selection
+End If
+	
+Dim SelectorParts() As String
+Dim paramNames() As String
+Dim paramTypes() As String
+Do
+Dim rmCount As Integer = rm.SubExpressionCount
+Dim selectorPart As String = trim(rm.subexpressionstring(1))
+Dim paramType, paramName As String
+If rm.SubExpressionCount > 2 Then
+paramType = trim(rm.subexpressionstring(2))
+If rm.SubExpressionCount > 3 Then
+paramName = trim(rm.subexpressionstring(3))
+End If
+End If
+
+Dim isByRef As Boolean = False
+If nthField(paramType, " ", 1) = "out" Then
+isByRef = True
+paramType = trim(mid(paramType, instr(paramType, " ")))
+
+If rightMatch(paramName, "Pointer") Then
+paramName = left(paramName, len(paramName) - 7)
+End If
+End If
+
+If trim(selectorPart) <> "" Then
+If paramType <> "" Then
+selectorParts.append trim(selectorPart + ":")
+Dim xojoParamType As String = convertToXojoType(paramType)
+If xojoParamType = "Ptr" Then
+isByRef = False
+End If
+paramtypes.append xojoParamType
+paramNames.append If (IsByRef, "ByRef ", "") + paramName
+Else
+selectorParts.append selectorPart
+End If
+End If
+rm = rx.search()
+Loop Until rm = Nil
+	
+// now lets build the declare.
+Dim methodType As String = If (returntype = "void", "Sub", "Function")
+Selector = ReplaceAll(join(selectorParts, ""), " ", "")
+	
+Dim declareParts() As String
+declareParts.append "Declare"
+declareParts.append methodType
+declareParts.append TrimRight(replaceall(Selector, ":", "_"),"_")
+declareParts.append "Lib ""Foundation"""
+declareParts.append "Selector """ + Selector + """"
+dim params() as string
+If sharedMethod = False Then
+params.append "obj as ptr"
+Else
+params.append "cls as ptr"
+End If
+For i As Integer = 0 To ubound(paramNames)
+params.append trim(paramNames(i) + " as " + paramTypes(i))
+Next i
+declareParts.append "(" + join(params, ", ") + ")"
+
+If methodType = "Function" Then
+declareParts.append "As " + convertToXojoType(returnType)
+End If
+	
+Return "// " + selection + endofline + Join(declareParts, " ")
+End Function
+
+Function ExtractMethod2(selection As String) As String
+Dim rx As New regex
+rx.searchPattern = "(?msi-U)(\+|\-)\s+\(([^)]+)\)(.*)"
+rx.options.TreatTargetAsOneLine = True
+Dim rm As regexmatch = rx.search(selection)
+If rm = Nil Then
+Return selection
+End If
+
+Dim sharedMethod As Boolean = (rm.subexpressionstring(1) = "+")
+Dim returnType As String = NthField(rm.subexpressionstring(2), " ", 1)
+
+Dim sel As String = rm.subexpressionstring(3) 
+
+Dim parts() As String
+Dim parenDepth As Integer
+Dim currentpart As String = ""
+For i As Integer = 1 To Len(sel)
+Dim ch As String = Mid(sel,i,1)
+If (ch = " " Or i = Len(sel)) And parenDepth = 0 Then
+parts.Add currentPart
+currentPart = ""
+Continue
+End If
+
+currentpart = currentpart + ch
+If ch = "(" Then
+parenDepth = parenDepth + 1
+ElseIf ch = ")" Then
+parenDepth = parenDepth - 1
+End If
+Next i
+
+Dim SelectorParts() As String
+Dim paramNames() As String
+Dim paramTypes() As String
+
+rx.searchpattern = "(?mi-Us)^([^:]+):\((.+)\)(.*)$"
+For i As Integer = 0 To UBound(parts)
+rm = rx.Search(parts(i))
+If rm<>Nil Then
+Dim debug_match As String = rm.SubExpressionString(0)
+
+Dim rmCount As Integer = rm.SubExpressionCount
+Dim selectorPart As String = rm.subexpressionstring(1)
+Dim paramType, paramName As String
+If rm.SubExpressionCount > 2 Then
+paramType = rm.subexpressionstring(2)
+If rm.SubExpressionCount > 3 Then
+paramName = rm.subexpressionstring(3)
+End If
+End If
+
+Dim isByRef As Boolean = False
+If NthField(paramType, " ", 1) = "out" Then
+isByRef = True
+paramType = Trim(Mid(paramType, InStr(paramType, " ")))
+
+If rightMatch(paramName, "Pointer") Then
+paramName = Left(paramName, Len(paramName) - 7)
+End If
+End If
+
+If Trim(selectorPart) <> "" Then
+If paramType <> "" Then
+selectorParts.append Trim(selectorPart + ":")
+Dim xojoParamType As String = convertToXojoType(paramType)
+paramtypes.append xojoParamType
+paramNames.append If (IsByRef, "ByRef ", "") + paramName
+Else
+selectorParts.append selectorPart
+End If
+End If
+End If
+Next i
+
+// if we didn't get a selector, just bail
+If Ubound(selectorParts) = -1 Then
+Return selection
+End If
+
+// now lets build the declare.
+Dim methodType As String = If (returntype = "void", "Sub", "Function")
+sel = ReplaceAll(Join(selectorParts, ""), " ", "")
+
+Dim declareParts() As String
+declareParts.append "Declare"
+declareParts.append methodType
+declareParts.append TrimRight(ReplaceAll(SEL, ":", "_"), "_")
+declareParts.append "Lib ""Foundation"""
+declareParts.append "Selector """ + SEL + """ ("
+If sharedMethod = False Then
+declareParts.append "obj as ptr"
+Else
+declareParts.append "cls as ptr"
+End If
+For i As Integer = 0 To ubound(paramNames)
+declareParts.append Trim(", " + paramNames(i) + " as " + paramTypes(i))
+Next i
+declareParts.append ")"
+If methodType = "Function" Then
+declareParts.append "As " + convertToXojoType(returnType)
+End If
+
+Dim rv As String =  "// " + selection + EndOfLine + Join(declareParts, " ")
+Return rv
+End Function
+
+// ============================= Support methods =============================
+Function convertToXojoType(typename As String) As String
+typename = trim(replaceall(typename, "*", ""))
+
+If typename = "BOOL" Then
+Return "Boolean"
+ElseIf typename = "NULL" Then
+Return "Nil"
+End If
+
+If CheckTypes(typename, Array ("NSString", "NSMutableString")) Then
+Return "CFStringRef"
+End If
+
+If CheckTypes(typename, Array ("int", "NSInteger", "NSUInteger", "long", "longlong", "unsigned long", "unsigned long long")) Then
+Return "Integer"
+End If
+
+If checktypes(typename, Array ("float")) Then
+Return "Single"
+End If
+
+If checktypes(typename, Array ("short", "Double", "CGFloat", "NSTimeInterval", "NSNumber", "unsigned short")) Then
+Return "Double"
+End If
+
+Return "Ptr"
+End Function
+
+Function CheckTypes(typename As String, matchTypes() As String) As Boolean
+If matchTypes.IndexOf(typename) > -1 Then
+Return True
+End If
+End Function
+
+Function LeftMatch(aString As String, match As String) As Boolean
+Return left(astring, len(match)) = match
+End Function
+
+Function RightMatch(aString As String, match As String) As Boolean
+Return right(astring, len(match)) = match
+End Function
+
+Function Replace_LineEndings(aString As String, replacement As String) As String
+aString = ReplaceAll(aString, chr(13) + chr(10), replacement)
+aString = ReplaceAll(aString, chr(13), replacement)
+aString = replaceAll(aString, chr(10), replacement)
+Return aString
+End Function
+
+Function Param(aString as String, paramarray replacements as string) as String
+for i as integer = UBound(replacements) DownTo 0
+aString = ReplaceAll(aString, "%" + str(i+1), replacements(i))
+next i
+return aString
+End Function
+
+Function TrimRight(aString as String, paramArray chars as string) as String
+while chars.IndexOf(right(aString,1)) > -1
+	aString = left(aString, Len(aString) - 1)
+wend
+return aString
+End Function
