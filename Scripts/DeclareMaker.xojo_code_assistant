@@ -109,7 +109,7 @@ If fnType = "Function" Then
 decl.append "As " + ConvertToXojoType(returnType)
 End If
 
-Return "// " + selection + endofline + Join(decl, " ")
+Return "// " + selection + endofline + Join(decl, " ") + EndOfLine
 End Function
 
 Function ExtractProperty(selection As String) As String
@@ -318,7 +318,7 @@ If methodType = "Function" Then
 declareParts.append "As " + convertToXojoType(returnType)
 End If
 	
-Return "// " + selection + endofline + Join(declareParts, " ")
+Return "// " + selection + endofline + Join(declareParts, " ") + EndOfLine
 End Function
 
 Function ExtractMethod2(selection As String) As String
@@ -425,8 +425,7 @@ If methodType = "Function" Then
 declareParts.append "As " + convertToXojoType(returnType)
 End If
 
-Dim rv As String =  "// " + selection + EndOfLine + Join(declareParts, " ")
-Return rv
+Return  "// " + selection + EndOfLine + Join(declareParts, " ") + EndOfLine
 End Function
 
 // ============================= Support methods =============================
