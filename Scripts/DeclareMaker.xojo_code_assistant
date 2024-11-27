@@ -101,6 +101,7 @@ decl.append methodName
 decl.append "Lib ""Foundation"""
 decl.append "("
 Dim tempParams() As String
+ReplaceKeywords(pNames)
 For i As Integer = 0 To UBound(pNames)
   tempParams.append pNames(i) + " as " + pTypes(i)
 Next i
@@ -287,7 +288,7 @@ If xojoParamType = "Ptr" Then
 isByRef = False
 End If
 paramtypes.append xojoParamType
-paramNames.append If (IsByRef, "ByRef ", "") + paramName
+paramNames.append If (IsByRef, "ByRef ", "") + ReplaceKeyword(paramName)
 Else
 selectorParts.append selectorPart
 End If
@@ -311,6 +312,7 @@ params.append "obj as ptr"
 Else
 params.append "cls as ptr"
 End If
+ReplaceKeywords(paramNames)
 For i As Integer = 0 To ubound(paramNames)
 params.append trim(paramNames(i) + " as " + paramTypes(i))
 Next i
@@ -391,7 +393,7 @@ If paramType <> "" Then
 selectorParts.append Trim(selectorPart + ":")
 Dim xojoParamType As String = convertToXojoType(paramType)
 paramtypes.append xojoParamType
-paramNames.append If (IsByRef, "ByRef ", "") + paramName
+paramNames.append If (IsByRef, "ByRef ", "") + ReplaceKeyword(paramName)
 Else
 selectorParts.append selectorPart
 End If
@@ -419,6 +421,7 @@ declareParts.append "obj as ptr"
 Else
 declareParts.append "cls as ptr"
 End If
+ReplaceKeywords(paramNames)
 For i As Integer = 0 To ubound(paramNames)
 declareParts.append Trim(", " + paramNames(i) + " as " + paramTypes(i))
 Next i
@@ -494,3 +497,20 @@ while chars.IndexOf(right(aString,1)) > -1
 wend
 return aString
 End Function
+
+Function ReplaceKeyword(keyword as String) as String
+keyword = trim(keyword)
+dim keywords() as String = Array("#Bad","#Else","#Elseif","#Endif","#If","#Pragma","#Tag","AddHandler","AddressOf","Aggregates","And","Array","As","Assigns","Async","Attributes","Await","Break","ByRef","ByVal","Call","Case","Catch","Class","Const","Continue","CType","Declare","Delegate","Dim","Do","DownTo","Each","Else","ElseIf","End","Enum","Event","Exception","Exit","Extends","False","Finally","For","Function","Global","GoTo","Handles","If","Implements","In","Inherits","Interface","Is","IsA","Lib","Loop","Me","Mod","Module","Namespace","New","Next","Nil","Not","Object","Of","Optional","Or","ParamArray","Private","Property","Protected","Public","Raise","RaiseEvent","Redim","Rem","RemoveHandler","Return","Select","Self","Shared","Soft","Static","Step","Structure","Sub","Super","Then","To","True","Try","Until","Using","Var","WeakAddressOf","Wend","While","With","Xor")
+
+If keywords.indexOf(keyword) > -1 then
+keyword = keyword + "_"
+end if
+
+return keyword
+End Function
+
+Sub ReplaceKeywords(keywordArray() as String)
+for i as integer = 0 to ubound(keywordArray)
+KeywordArray(i) = ReplaceKeyword(KeywordArray(i))
+next i
+End Sub
