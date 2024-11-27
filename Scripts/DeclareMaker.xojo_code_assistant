@@ -100,9 +100,11 @@ decl.append fnType
 decl.append methodName
 decl.append "Lib ""Foundation"""
 decl.append "("
+Dim tempParams() As String
 For i As Integer = 0 To UBound(pNames)
-decl.append pNames(i) + " as " + pTypes(i)
+  tempParams.append pNames(i) + " as " + pTypes(i)
 Next i
+decl.append join(tempParams, ", ")
 decl.append ")"
 
 If fnType = "Function" Then
