@@ -64,7 +64,7 @@ cb.Text = newText
 cb.Text = selection
 End If
 
-Return newText
+Return newText + endofline
 	
 End Function
 
@@ -109,7 +109,7 @@ If fnType = "Function" Then
 decl.append "As " + ConvertToXojoType(returnType)
 End If
 
-Return "// " + selection + endofline + Join(decl, " ") + EndOfLine
+Return "// " + selection + endofline + Join(decl, " ")
 End Function
 
 Function ExtractProperty(selection As String) As String
@@ -318,7 +318,7 @@ If methodType = "Function" Then
 declareParts.append "As " + convertToXojoType(returnType)
 End If
 	
-Return "// " + selection + endofline + Join(declareParts, " ") + EndOfLine
+Return "// " + selection + endofline + Join(declareParts, " ")
 End Function
 
 Function ExtractMethod2(selection As String) As String
@@ -425,7 +425,8 @@ If methodType = "Function" Then
 declareParts.append "As " + convertToXojoType(returnType)
 End If
 
-Return  "// " + selection + EndOfLine + Join(declareParts, " ") + EndOfLine
+Dim rv As String =  "// " + selection + EndOfLine + Join(declareParts, " ")
+Return rv
 End Function
 
 // ============================= Support methods =============================
