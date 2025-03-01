@@ -456,17 +456,19 @@ Function ExtractMethod2(selection As String) As String
 	declareParts.append "Lib ""Foundation"""
 	declareParts.append "Selector """ + SEL + """ ("
 	
+	Dim paramParts() As String
 	If sharedMethod = False Then
-	  declareParts.append "obj as ptr"
+	  paramParts.append "obj as ptr"
 	Else
-	  declareParts.append "cls as ptr"
+	  paramParts.append "cls as ptr"
 	End If
 	
 	ReplaceKeywords(paramNames)
 	
 	For i As Integer = 0 To ubound(paramNames)
-	  declareParts.append Trim(", " + paramNames(i) + " as " + paramTypes(i))
+	  paramParts.append Trim(paramNames(i) + " as " + paramTypes(i))
 	Next i
+	declareParts.append Join(paramParts, ", ")
 	declareParts.append ")"
 	
 	If methodType = "Function" Then
