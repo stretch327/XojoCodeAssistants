@@ -18,7 +18,7 @@ This library of scripts is designed for people who do a lot of declare work. The
 - Insert SetDelegate declare
 - Insert Class and SuperClass declares
 - NSClass constant lookup code
-- ***Creating Declares from Apple's docs - SEE BELOW***
+- ***Creating Declares from Apple's Objective-C docs - SEE BELOW***
 
 As well as four scripts for wrapping selections compiler directives:
 
