@@ -342,11 +342,18 @@ Function ExtractMethod2(selection As String) As String
 	Dim parts() As String
 	Dim parenDepth As Integer
 	Dim currentpart As String = ""
+	Dim colonCount As Integer = 0
 	For i As Integer = 1 To Len(sel)
 	  Dim ch As String = Mid(sel,i,1)
+	  If ch = ":" Then 
+		colonCount = colonCount + 1
+	  End If
+	  
 	  If (ch = " " Or i = Len(sel)) And parenDepth = 0 Then
-		parts.Add currentPart
-		currentPart = ""
+		If currentpart<>"" Then
+		  parts.Add currentPart
+		  currentPart = ""
+		End If
 		Continue
 	  End If
 	  
@@ -358,46 +365,60 @@ Function ExtractMethod2(selection As String) As String
 	  End If
 	Next i
 	
+	Dim sections() As String
+	If parts.Count > colonCount And parts.Count Mod 2 = 0 Then
+	  For i As Integer = 0 To parts.LastIndex Step 2
+		sections.Add parts(i) + parts(i+1)
+	  Next
+	Else
+	  sections = parts
+	End If
+	
 	Dim SelectorParts() As String
 	Dim paramNames() As String
 	Dim paramTypes() As String
 	
 	rx.searchpattern = "(?mi-Us)^([^:]+):\((.+)\)\s(.*);?$"
-	rm = rx.Search(sel)
-	While rm<>Nil 
-	  // Selector
-	  Dim selectorPart As String = rm.SubExpressionString(1)
-	  
-	  // type
-	  Dim paramType As String = rm.SubExpressionString(2)
-	  
-	  // parameter name
-	  Dim paramName As String = rm.SubExpressionString(3).Replace(";","")
-	  
-	  Dim isByRef As Boolean = False
-	  If NthField(paramType, " ", 1) = "out" Then
-		isByRef = True
-		paramType = Trim(Mid(paramType, InStr(paramType, " ")))
+	rx.SearchPattern = "(?mi-Us)^([^:]+):\(((?:[^()]|(?R))+)\)\s*(.*);?$"
+	rx.SearchPattern = "(?mi-Us)^([^:]+):\((.*)\)(.*)(;|$)"
+	
+	For i As Integer = 0 To sections.LastIndex
+	  rm = rx.Search(sections(i))
+	  While rm<>Nil 
+		// Selector
+		Dim selectorPart As String = rm.SubExpressionString(1)
 		
-		If rightMatch(paramName, "Pointer") Then
-		  paramName = Left(paramName, Len(paramName) - 7)
+		// type
+		Dim paramType As String = rm.SubExpressionString(2)
+		
+		// parameter name
+		Dim paramName As String = rm.SubExpressionString(3).Replace(";","")
+		
+		Dim isByRef As Boolean = False
+		If NthField(paramType, " ", 1) = "out" Then
+		  isByRef = True
+		  paramType = Trim(Mid(paramType, InStr(paramType, " ")))
+		  
+		  If rightMatch(paramName, "Pointer") Then
+			paramName = Left(paramName, Len(paramName) - 7)
+		  End If
 		End If
-	  End If
-	  
-	  If Trim(selectorPart) <> "" Then
-		If paramType <> "" Then
-		  selectorParts.append Trim(selectorPart + ":")
-		  Dim xojoParamType As String = convertToXojoType(paramType)
-		  paramtypes.append xojoParamType
-		  paramNames.append If (IsByRef, "ByRef ", "") + ReplaceKeyword(paramName)
-		Else
-		  selectorParts.append selectorPart
+		
+		If Trim(selectorPart) <> "" Then
+		  If paramType <> "" Then
+			selectorParts.append Trim(selectorPart + ":")
+			Dim xojoParamType As String = convertToXojoType(paramType)
+			paramtypes.append xojoParamType
+			paramNames.append If (IsByRef, "ByRef ", "") + ReplaceKeyword(paramName)
+		  Else
+			selectorParts.append selectorPart
+		  End If
 		End If
-	  End If
-	  
-	  // continue searching
-	  rm = rx.Search
-	Wend
+		
+		// continue searching
+		rm = rx.Search
+	  Wend
+	Next
 	
 	If SelectorParts.Count = 0 Then
 	  rx.searchpattern = "(?mi-Us)^([^:]+):\((.+)\)(.*)$"
